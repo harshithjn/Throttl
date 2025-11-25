@@ -4,31 +4,33 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/harshithjn/Throttl/internal/handlers"
 	"github.com/harshithjn/Throttl/internal/ratelimiter"
 	"github.com/harshithjn/Throttl/internal/storage"
 )
 
 func main() {
-	// Initialize Redis client
+	// Redis
 	redisClient := storage.NewRedisClient()
-
-	// Test Redis connection
 	if err := redisClient.Ping(); err != nil {
-		panic(err) // Fail fast if Redis is not reachable
+		panic(err)
 	}
-
 	fmt.Println("Connected to Redis successfully")
 
-	// Test Token Bucket limiter
-	limiter := ratelimiter.NewTokenBucketLimiter(redisClient)
-	allowed, err := limiter.AllowRequest("user123", 10, 1)
+	// PostgreSQL
+	pg, err := storage.NewPostgresStore()
 	if err != nil {
 		panic(err)
 	}
+	defer pg.Close()
+	fmt.Println("Connected to PostgreSQL successfully")
 
-	fmt.Println("Token Bucket test result (user123):", allowed)
+	// Rate limiter
+	limiter := ratelimiter.NewTokenBucketLimiter(redisClient)
 
-	// Basic health endpoint
+	// Register routes
+	http.HandleFunc("/check", handlers.CheckHandler(limiter, pg))
+
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
