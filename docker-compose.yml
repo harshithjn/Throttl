@@ -7,3 +7,14 @@ services:
     ports:
       - "6379:6379"
     restart: always
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: throttl-postgres
+    environment:
+      POSTGRES_USER: throttl
+      POSTGRES_PASSWORD: throttl
+      POSTGRES_DB: throttl
+    ports:
+      - "5432:5432"
+    restart: always
