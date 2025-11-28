@@ -5,8 +5,11 @@ import (
 	"net/http"
 
 	"github.com/harshithjn/Throttl/internal/handlers"
+	"github.com/harshithjn/Throttl/internal/metrics"
 	"github.com/harshithjn/Throttl/internal/ratelimiter"
 	"github.com/harshithjn/Throttl/internal/storage"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -28,12 +31,20 @@ func main() {
 	// Rate limiter
 	limiter := ratelimiter.NewTokenBucketLimiter(redisClient)
 
-	// Register routes
+	// Initialize Prometheus metrics
+	metrics.Init()
+	fmt.Println("Prometheus metrics initialized")
+
+	// Routes
 	http.HandleFunc("/check", handlers.CheckHandler(limiter, pg))
 
+	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
+
+	// Prometheus metrics endpoint
+	http.Handle("/metrics", promhttp.Handler())
 
 	fmt.Println("Server running on :8080")
 	http.ListenAndServe(":8080", nil)
