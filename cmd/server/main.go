@@ -9,6 +9,7 @@ import (
 	"github.com/harshithjn/Throttl/internal/ratelimiter"
 	"github.com/harshithjn/Throttl/internal/storage"
 
+	"github.com/harshithjn/Throttl/internal/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -36,7 +37,11 @@ func main() {
 	fmt.Println("Prometheus metrics initialized")
 
 	// Routes
-	http.HandleFunc("/check", handlers.CheckHandler(limiter, pg))
+	http.Handle("/check",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.CheckHandler(limiter, pg)),
+		),
+	)
 
 	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
