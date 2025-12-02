@@ -6,10 +6,10 @@ import (
 
 	"github.com/harshithjn/Throttl/internal/handlers"
 	"github.com/harshithjn/Throttl/internal/metrics"
+	"github.com/harshithjn/Throttl/internal/middleware"
 	"github.com/harshithjn/Throttl/internal/ratelimiter"
 	"github.com/harshithjn/Throttl/internal/storage"
 
-	"github.com/harshithjn/Throttl/internal/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -36,10 +36,29 @@ func main() {
 	metrics.Init()
 	fmt.Println("Prometheus metrics initialized")
 
-	// Routes
+	// Public check endpoint (protected by API key)
 	http.Handle("/check",
 		middleware.APIKeyAuth(pg)(
 			http.HandlerFunc(handlers.CheckHandler(limiter, pg)),
+		),
+	)
+
+	// Admin endpoints (also protected)
+	http.Handle("/admin/create-key",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.CreateAPIKeyHandler(pg)),
+		),
+	)
+
+	http.Handle("/admin/list-keys",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.ListAPIKeysHandler(pg)),
+		),
+	)
+
+	http.Handle("/admin/delete-key",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.DeleteAPIKeyHandler(pg)),
 		),
 	)
 
