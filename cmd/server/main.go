@@ -61,6 +61,26 @@ func main() {
 			http.HandlerFunc(handlers.DeleteAPIKeyHandler(pg)),
 		),
 	)
+	// Admin: Create or update config
+	http.Handle("/admin/config/upsert",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.UpsertConfigHandler(pg)),
+		),
+	)
+
+	// Admin: Delete config
+	http.Handle("/admin/config/delete",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.DeleteConfigHandler(pg)),
+		),
+	)
+
+	// Admin: List configs
+	http.Handle("/admin/config/list",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.ListConfigsHandler(pg)),
+		),
+	)
 
 	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
