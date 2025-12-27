@@ -1,0 +1,285 @@
+# Throttl Platform - Git Ignore File
+# ===================================
+
+# Operating System Files
+# -----------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# IDE and Editor Files
+# --------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Go Backend
+# ----------
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server
+throttl
+cmd/server/server
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Air live reload
+tmp/
+
+# Frontend (React/Next.js)
+# ------------------------
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+
+# Frontend dependencies and cache
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
+
+# Frontend environment files
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Frontend build artifacts
+frontend/.vercel
+frontend/.turbo
+
+# Docker
+# ------
+# Don't ignore Dockerfiles, but ignore build contexts
+.dockerignore
+
+# Docker Compose override files
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# Environment Variables
+# ---------------------
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Database
+# --------
+*.db
+*.sqlite
+*.sqlite3
+data/
+postgres-data/
+pgdata/
+
+# Logs
+# ----
+*.log
+logs/
+log/
+
+# Runtime and Process Files
+# -------------------------
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage and Testing
+# -------------------
+coverage/
+*.cover
+*.coverprofile
+.nyc_output
+coverage.lcov
+
+# Temporary Files
+# ---------------
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Backup Files
+# ------------
+*.bak
+*.backup
+*.old
+*.orig
+
+# Certificates and Keys
+# ---------------------
+*.pem
+*.key
+*.crt
+*.cert
+ssl/
+certs/
+keys/
+
+# Monitoring and Metrics Data
+# ---------------------------
+prometheus-data/
+grafana-data/
+monitoring/data/
+
+# Development and Testing Artifacts
+# ---------------------------------
+# Load testing results
+load-test-results/
+*.jmx
+*.jtl
+
+# Development scripts (keep main ones)
+scripts/dev/
+scripts/test/
+scripts/experimental/
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Package managers
+# ----------------
+package-lock.json.bak
+yarn.lock.bak
+
+# OS generated files
+# ------------------
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Cloud and Deployment
+# --------------------
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Kubernetes secrets
+k8s/secrets/
+k8s/*-secret.yaml
+
+# AWS/Cloud credentials
+.aws/
+.gcp/
+.azure/
+
+# Local development overrides
+# ---------------------------
+docker-compose.local.yml
+docker-compose.dev.yml
+config.local.yaml
+config.dev.yaml
+
+# Performance and profiling
+# -------------------------
+*.prof
+*.pprof
+*.trace
+
+# Build artifacts
+# ---------------
+bin/
+build/
+dist/
+
+# Cache directories
+# -----------------
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Editor backup files
+# -------------------
+*~
+*.tmp
+*.temp
+
+# Local configuration overrides
+# -----------------------------
+local.env
+.local
+config.local.*
+
+# Development databases
+# ---------------------
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Node.js (for any Node tools)
+# ----------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if any Python tools are used)
+# --------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Ignore development phase artifacts
+# ----------------------------------
+PHASE*.md
+phase*/
+development-notes/
+TODO.md
+NOTES.md
+
+# Keep important files (explicitly don't ignore)
+# ----------------------------------------------
+!.gitkeep
+!README.md
+!LICENSE
+!Dockerfile
+!docker-compose.yml
+!*.go
+!*.js
+!*.ts
+!*.tsx
+!*.json
+!*.yaml
+!*.yml
+!*.md
+!*.sh
+!*.sql

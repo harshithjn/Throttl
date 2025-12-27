@@ -1,0 +1,121 @@
+groups:
+  - name: throttl.rules
+    rules:
+      # High error rate alert
+      - alert: ThrottlHighErrorRate
+        expr: |
+          (
+            sum(rate(throttl_http_requests_total{status_code=~"5.."}[5m])) /
+            sum(rate(throttl_http_requests_total[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: throttl
+        annotations:
+          summary: "Throttl has high error rate"
+          description: "Throttl error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+
+      # High authentication failure rate
+      - alert: ThrottlHighAuthFailureRate
+        expr: sum(rate(throttl_api_key_auth_failures_total[5m])) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: throttl
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Throttl is experiencing {{ $value }} authentication failures per second"
+
+      # High request latency
+      - alert: ThrottlHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(throttl_request_latency_seconds_bucket[5m])) by (le)) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: throttl
+        annotations:
+          summary: "Throttl high request latency"
+          description: "95th percentile latency is {{ $value }}s"
+
+      # Database connection issues
+      - alert: ThrottlDatabaseConnectionIssues
+        expr: throttl_database_connections{state="open"} < 1
+        for: 1m
+        labels:
+          severity: critical
+          service: throttl
+        annotations:
+          summary: "Throttl database connection issues"
+          description: "Throttl has no open database connections"
+
+      # Redis connection issues
+      - alert: ThrottlRedisConnectionIssues
+        expr: throttl_redis_connections{state="connected"} < 1
+        for: 1m
+        labels:
+          severity: critical
+          service: throttl
+        annotations:
+          summary: "Throttl Redis connection issues"
+          description: "Throttl is not connected to Redis"
+
+      # High memory usage
+      - alert: ThrottlHighMemoryUsage
+        expr: throttl_memory_usage_bytes{component="heap"} > 500000000  # 500MB
+        for: 5m
+        labels:
+          severity: warning
+          service: throttl
+        annotations:
+          summary: "Throttl high memory usage"
+          description: "Throttl heap memory usage is {{ $value }} bytes"
+
+      # Too many goroutines
+      - alert: ThrottlHighGoroutineCount
+        expr: throttl_goroutines > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: throttl
+        annotations:
+          summary: "Throttl high goroutine count"
+          description: "Throttl has {{ $value }} goroutines running"
+
+      # Rate limiting effectiveness (too many blocks might indicate attack)
+      - alert: ThrottlHighBlockRate
+        expr: |
+          (
+            sum(rate(throttl_requests_blocked_total[5m])) /
+            sum(rate(throttl_requests_allowed_total[5m]) + rate(throttl_requests_blocked_total[5m]))
+          ) > 0.8
+        for: 10m
+        labels:
+          severity: info
+          service: throttl
+        annotations:
+          summary: "High rate limiting block rate"
+          description: "{{ $value | humanizePercentage }} of requests are being blocked"
+
+      # Service down
+      - alert: ThrottlServiceDown
+        expr: up{job="throttl"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: throttl
+        annotations:
+          summary: "Throttl service is down"
+          description: "Throttl service has been down for more than 1 minute"
+
+      # Configuration changes spike (potential security concern)
+      - alert: ThrottlHighConfigurationChanges
+        expr: sum(rate(throttl_configuration_changes_total[5m])) > 5
+        for: 2m
+        labels:
+          severity: info
+          service: throttl
+        annotations:
+          summary: "High configuration change rate"
+          description: "{{ $value }} configuration changes per second detected"
