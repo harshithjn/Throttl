@@ -38,14 +38,8 @@ open http://localhost
 open http://localhost:3000  # Grafana (admin/admin)
 ```
 
-## Production Deployment
-
-- **Docker Compose**: Use included `docker-compose.yml`
-- **Kubernetes**: Apply manifests in `k8s/` directory  
-- **Cloud Platforms**: Follow guides in `docs/` for AWS, GCP, Azure
-
 ## Documentation
 
-- `ENGINEERING_DETAILS.md` - Technical architecture and design decisions
-- `RUN_AND_DEPLOY.md` - Setup and deployment instructions
+- `Documentation.md` - Technical architecture and design decisions
+- `Guide.md` - Setup and deployment instructions
 - `docs/` - Cloud-specific deployment guides
