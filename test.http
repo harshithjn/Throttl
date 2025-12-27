@@ -1,7 +1,0 @@
-POST http://localhost:8080/check
-Content-Type: application/json
-
-{
-  "user_id": "clientA",
-  "route": "/login"
-}

@@ -1,6 +1,9 @@
 package ratelimiter
 
 import (
+	"context"
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/harshithjn/Throttl/internal/storage"
@@ -12,67 +15,78 @@ type TokenBucketLimiter struct {
 }
 
 // AllowRequest checks if a request is allowed based on token bucket rules
+// Uses Lua script for atomic operations to prevent race conditions
 func (tb *TokenBucketLimiter) AllowRequest(userID string, capacity int, refillRate int) (bool, error) {
-	keyTokens := "tb:tokens:" + userID
-	keyTimestamp := "tb:ts:" + userID
-
-	// Fetch current tokens and last timestamp atomically
-	pipe := tb.Redis.Client.TxPipeline()
-
-	tokensCmd := pipe.Get(storage.Ctx, keyTokens)
-	tsCmd := pipe.Get(storage.Ctx, keyTimestamp)
-
-	_, err := pipe.Exec(storage.Ctx)
-	if err != nil && err != redis.Nil {
-		return false, err
-	}
-
-	// Parse current state
-	var tokens int
-	var lastTs int64
-
-	if tokensCmd.Err() == redis.Nil {
-		tokens = capacity
-	} else {
-		tokens, _ = tokensCmd.Int()
-	}
-
-	if tsCmd.Err() == redis.Nil {
-		lastTs = time.Now().Unix()
-	} else {
-		lastTs, _ = tsCmd.Int64()
-	}
-
-	// Calculate refill
+	key := fmt.Sprintf("tb:%s", userID)
 	now := time.Now().Unix()
-	elapsed := now - lastTs
-
-	refilled := int(elapsed) * refillRate
-	tokens = min(capacity, tokens+refilled)
-
-	if tokens <= 0 {
-		// Not allowed
-		return false, nil
-	}
-
-	// Allow request → deduct 1 token
-	tokens--
-
-	// Store updated values back in Redis
-	pipe2 := tb.Redis.Client.TxPipeline()
-	pipe2.Set(storage.Ctx, keyTokens, tokens, 0)
-	pipe2.Set(storage.Ctx, keyTimestamp, now, 0)
-	_, err = pipe2.Exec(storage.Ctx)
+	
+	// Lua script for atomic token bucket operations
+	luaScript := `
+		local key = KEYS[1]
+		local capacity = tonumber(ARGV[1])
+		local refill_rate = tonumber(ARGV[2])
+		local now = tonumber(ARGV[3])
+		
+		-- Get current bucket state
+		local bucket = redis.call('HMGET', key, 'tokens', 'last_refill')
+		local tokens = tonumber(bucket[1]) or capacity
+		local last_refill = tonumber(bucket[2]) or now
+		
+		-- Calculate tokens to add based on elapsed time
+		local elapsed = math.max(0, now - last_refill)
+		local tokens_to_add = elapsed * refill_rate
+		tokens = math.min(capacity, tokens + tokens_to_add)
+		
+		-- Check if request can be allowed
+		if tokens < 1 then
+			-- Update timestamp even if request is denied
+			redis.call('HMSET', key, 'tokens', tokens, 'last_refill', now)
+			redis.call('EXPIRE', key, 3600) -- 1 hour TTL
+			return 0
+		end
+		
+		-- Allow request and consume token
+		tokens = tokens - 1
+		redis.call('HMSET', key, 'tokens', tokens, 'last_refill', now)
+		redis.call('EXPIRE', key, 3600) -- 1 hour TTL
+		return 1
+	`
+	
+	result, err := tb.Redis.Client.Eval(
+		context.Background(),
+		luaScript,
+		[]string{key},
+		capacity, refillRate, now,
+	).Result()
+	
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("redis eval error: %w", err)
 	}
-
-	return true, nil
+	
+	allowed, ok := result.(int64)
+	if !ok {
+		return false, fmt.Errorf("unexpected redis response type")
+	}
+	
+	return allowed == 1, nil
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
+// GetBucketState returns current token count for debugging/monitoring
+func (tb *TokenBucketLimiter) GetBucketState(userID string) (int, error) {
+	key := fmt.Sprintf("tb:%s", userID)
+	
+	result, err := tb.Redis.Client.HGet(context.Background(), key, "tokens").Result()
+	if err != nil {
+		if err == redis.Nil {
+			return 0, nil // Bucket doesn't exist yet
+		}
+		return 0, err
 	}
-	return b
+	
+	tokens, err := strconv.Atoi(result)
+	if err != nil {
+		return 0, fmt.Errorf("invalid token count in redis: %w", err)
+	}
+	
+	return tokens, nil
 }
