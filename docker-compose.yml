@@ -4,7 +4,7 @@ services:
     image: redis:7-alpine
     container_name: throttl-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: throttl
       POSTGRES_DB: throttl
     ports:
-      - "5432:5432"
+      - "5435:5432"
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U throttl -d throttl"]
@@ -60,49 +60,7 @@ services:
     networks:
       - throttl-network
 
-  # Monitoring Stack
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: throttl-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./monitoring/prometheus/rules:/etc/prometheus/rules
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
-    restart: always
-    depends_on:
-      - throttl
-    networks:
-      - throttl-network
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: throttl-grafana
-    ports:
-      - "3002:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_DOMAIN=localhost
-      - GF_SERVER_ROOT_URL=http://localhost:3002
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-    restart: always
-    depends_on:
-      - prometheus
-    networks:
-      - throttl-network
 
   # Frontend Dashboard
   frontend:
@@ -112,14 +70,9 @@ services:
       - "3001:3001"
     environment:
       - THROTTL_API_URL=http://throttl:8080
-      - PROMETHEUS_URL=http://prometheus:9090
-      - GRAFANA_URL=http://grafana:3000
       - NEXT_PUBLIC_THROTTL_API_URL=http://localhost:8080
-      - NEXT_PUBLIC_PROMETHEUS_URL=http://localhost:9090
-      - NEXT_PUBLIC_GRAFANA_URL=http://localhost:3002
     depends_on:
       - throttl
-      - grafana
     restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
@@ -142,15 +95,12 @@ services:
     depends_on:
       - throttl
       - frontend
-      - grafana
     restart: always
     networks:
       - throttl-network
 
 volumes:
   postgres_data:
-  prometheus_data:
-  grafana_data:
 
 networks:
   throttl-network:

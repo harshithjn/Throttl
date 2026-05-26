@@ -3,6 +3,8 @@ package storage
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"log"
+	"os"
 	"time"
 )
 
@@ -70,3 +72,45 @@ func (ps *PostgresStore) ValidateAPIKey(key string) (*APIKey, error) {
 
 	return &a, nil
 }
+
+// BootstrapMasterKey seeds a default master key if the database is currently empty of keys
+func (ps *PostgresStore) BootstrapMasterKey() error {
+	var count int
+	err := ps.DB.QueryRow("SELECT COUNT(*) FROM api_keys").Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil // Already bootstrapped
+	}
+
+	masterKey := os.Getenv("ADMIN_MASTER_KEY")
+	if masterKey == "" {
+		masterKey = "admin-master-key-123456"
+	}
+
+	// Get default client ID/name
+	var defaultClientName string
+	err = ps.DB.QueryRow("SELECT name FROM clients WHERE name = 'default'").Scan(&defaultClientName)
+	if err != nil {
+		// If default client doesn't exist, create it
+		_, err = ps.DB.Exec("INSERT INTO clients (name, description) VALUES ('default', 'Default client')")
+		if err != nil {
+			return err
+		}
+		defaultClientName = "default"
+	}
+
+	hashedKey := HashAPIKey(masterKey)
+	_, err = ps.DB.Exec(`
+		INSERT INTO api_keys (client_id, key_hash, key_prefix, name, key_type, is_active, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, defaultClientName, hashedKey, "admin-", "Master Admin Key", "admin", true, time.Now())
+	if err != nil {
+		return err
+	}
+
+	log.Printf("🔑 Successfully Bootstrapped Master Admin Key: %s", masterKey)
+	return nil
+}
+

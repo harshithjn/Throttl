@@ -39,6 +39,10 @@ func main() {
 	}()
 	log.Println("✓ Connected to PostgreSQL successfully")
 
+	if err := pg.BootstrapMasterKey(); err != nil {
+		log.Printf("Failed to bootstrap master key: %v", err)
+	}
+
 	// Initialize rate limiter factory
 	limiterFactory := ratelimiter.NewRateLimiterFactory(redisClient)
 	log.Println("✓ Rate limiter factory initialized (Token Bucket + Sliding Window)")
@@ -88,12 +92,10 @@ func setupRoutes(limiterFactory *ratelimiter.RateLimiterFactory, pg *storage.Pos
 		),
 	)
 
-	// Admin API Key Management (admin only)
+	// API Key Management (multi-tenant)
 	mux.Handle("/admin/keys/create",
 		middleware.APIKeyAuth(pg)(
-			middleware.AdminOnly(
-				http.HandlerFunc(handlers.CreateAPIKeyHandler(pg)),
-			),
+			http.HandlerFunc(handlers.CreateAPIKeyHandler(pg)),
 		),
 	)
 
@@ -158,6 +160,46 @@ func setupRoutes(limiterFactory *ratelimiter.RateLimiterFactory, pg *storage.Pos
 			http.HandlerFunc(handlers.GetClientStatsHandler(pg)), // Multi-tenancy handled inside
 		),
 	)
+
+	// Client management (admin only)
+	mux.Handle("/admin/clients/create",
+		middleware.APIKeyAuth(pg)(
+			middleware.AdminOnly(
+				http.HandlerFunc(handlers.CreateClientHandler(pg)),
+			),
+		),
+	)
+
+	mux.Handle("/admin/clients/update",
+		middleware.APIKeyAuth(pg)(
+			middleware.AdminOnly(
+				http.HandlerFunc(handlers.UpdateClientHandler(pg)),
+			),
+		),
+	)
+
+	mux.Handle("/admin/clients/delete",
+		middleware.APIKeyAuth(pg)(
+			middleware.AdminOnly(
+				http.HandlerFunc(handlers.DeleteClientHandler(pg)),
+			),
+		),
+	)
+
+	mux.Handle("/admin/clients/list",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.ListClientsHandler(pg)),
+		),
+	)
+
+	mux.Handle("/admin/stats/global",
+		middleware.APIKeyAuth(pg)(
+			http.HandlerFunc(handlers.GetGlobalStatsHandler(limiterFactory.Redis)),
+		),
+	)
+
+	// Public self-service registration endpoint (no auth required)
+	mux.HandleFunc("/public/register", handlers.RegisterHandler(pg))
 
 	// Health check endpoint (no authentication required)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

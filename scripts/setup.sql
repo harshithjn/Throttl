@@ -2,6 +2,7 @@
 -- Complete schema for distributed rate limiting platform
 
 -- Drop existing tables if they exist
+DROP VIEW IF EXISTS active_rate_limits CASCADE;
 DROP TABLE IF EXISTS audit_log CASCADE;
 DROP TABLE IF EXISTS rate_limits CASCADE;
 DROP TABLE IF EXISTS api_keys CASCADE;
@@ -9,8 +10,7 @@ DROP TABLE IF EXISTS clients CASCADE;
 
 -- Create clients table for multi-tenancy
 CREATE TABLE clients (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) PRIMARY KEY,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -19,10 +19,11 @@ CREATE TABLE clients (
 -- Create API keys table with security features
 CREATE TABLE api_keys (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    client_id VARCHAR(255) NOT NULL REFERENCES clients(name) ON DELETE CASCADE,
     key_hash VARCHAR(64) NOT NULL UNIQUE,
-    key_prefix VARCHAR(8) NOT NULL,
+    key_prefix VARCHAR(8),
     name VARCHAR(255) NOT NULL,
+    key_type VARCHAR(20) NOT NULL DEFAULT 'client',
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_used_at TIMESTAMP,
@@ -32,22 +33,23 @@ CREATE TABLE api_keys (
 -- Create rate limits table with algorithm support
 CREATE TABLE rate_limits (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-    route_pattern VARCHAR(255) NOT NULL,
+    client_id VARCHAR(255) NOT NULL REFERENCES clients(name) ON DELETE CASCADE,
+    route VARCHAR(255) NOT NULL,
     algorithm VARCHAR(20) NOT NULL CHECK (algorithm IN ('token_bucket', 'sliding_window')),
     limit_value INTEGER NOT NULL CHECK (limit_value > 0),
-    window_seconds INTEGER NOT NULL CHECK (window_seconds > 0),
-    burst_capacity INTEGER,
+    refill_rate INTEGER DEFAULT 1,
+    capacity INTEGER DEFAULT 10,
+    window_size INTEGER DEFAULT 60,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(client_id, route_pattern)
+    UNIQUE(client_id, route)
 );
 
 -- Create audit log table
 CREATE TABLE audit_log (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id),
+    client_id VARCHAR(255) REFERENCES clients(name) ON DELETE CASCADE,
     action VARCHAR(100) NOT NULL,
     resource_type VARCHAR(50) NOT NULL,
     resource_id VARCHAR(255),
@@ -90,22 +92,21 @@ INSERT INTO clients (name, description) VALUES
 ('default', 'Default client for testing and development');
 
 -- Insert default rate limit configuration
-INSERT INTO rate_limits (client_id, route_pattern, algorithm, limit_value, window_seconds, burst_capacity)
-SELECT c.id, '*', 'token_bucket', 100, 60, 10
-FROM clients c WHERE c.name = 'default';
+INSERT INTO rate_limits (client_id, route, algorithm, limit_value, refill_rate, capacity, window_size)
+VALUES ('default', '*', 'token_bucket', 100, 1, 10, 60);
 
 -- Create view for active configurations
 CREATE VIEW active_rate_limits AS
 SELECT 
     rl.id,
-    c.name as client_name,
-    rl.route_pattern,
+    rl.client_id as client_name,
+    rl.route,
     rl.algorithm,
     rl.limit_value,
-    rl.window_seconds,
-    rl.burst_capacity
+    rl.refill_rate,
+    rl.capacity,
+    rl.window_size
 FROM rate_limits rl
-JOIN clients c ON rl.client_id = c.id
 WHERE rl.is_active = true;
 
 -- Verify setup

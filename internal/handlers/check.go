@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -93,6 +94,26 @@ func CheckHandler(factory *ratelimiter.RateLimiterFactory, store *storage.Postgr
 		// Record comprehensive metrics
 		totalLatency := time.Since(startTime)
 		metrics.RecordRateLimitDecision(req.UserID, req.Route, cfg.Algorithm, allowed, totalLatency)
+
+		// Increment Redis metrics asynchronously to keep the main path fast
+		go func(isAllowed bool, duration time.Duration) {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			
+			pipe := factory.Redis.Client.Pipeline()
+			pipe.Incr(ctx, "throttl:stats:total_requests")
+			if isAllowed {
+				pipe.Incr(ctx, "throttl:stats:allowed_requests")
+			} else {
+				pipe.Incr(ctx, "throttl:stats:blocked_requests")
+			}
+			pipe.IncrByFloat(ctx, "throttl:stats:total_latency_ms", float64(duration.Microseconds())/1000.0)
+			
+			_, err := pipe.Exec(ctx)
+			if err != nil {
+				log.Printf("Failed to increment Redis stats: %v", err)
+			}
+		}(allowed, totalLatency)
 
 		if allowed {
 			log.Printf("Request ALLOWED: user=%s, route=%s, algorithm=%s", req.UserID, req.Route, cfg.Algorithm)

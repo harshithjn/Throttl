@@ -17,10 +17,10 @@ case "$1" in
         ;;
     restart)
         echo "🔄 Restarting Throttl Platform..."
-        ./restart.sh
+        "$(dirname "$0")/restart.sh"
         ;;
     status)
-        ./status.sh
+        "$(dirname "$0")/status.sh"
         ;;
     logs)
         if [ -z "$2" ]; then

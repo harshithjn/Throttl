@@ -1,222 +1,254 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-    ChartBarIcon,
-    KeyIcon,
-    CogIcon,
-    ShieldCheckIcon,
-    ClockIcon,
-    UsersIcon
+  ArrowRightIcon,
+  BoltIcon,
+  ChartBarIcon,
+  CloudIcon,
+  Cog6ToothIcon,
+  KeyIcon,
+  LockClosedIcon,
+  ServerIcon,
+  ShieldCheckIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline';
-import { MetricsCard } from '@/components/MetricsCard';
-import { RecentActivity } from '@/components/RecentActivity';
-import { SystemStatus } from '@/components/SystemStatus';
 
-interface DashboardStats {
-    totalRequests: number;
-    allowedRequests: number;
-    blockedRequests: number;
-    activeClients: number;
-    activeKeys: number;
-    avgLatency: number;
+export default function LandingPage() {
+  return (
+    <div className="min-h-screen bg-black text-gray-100">
+      {/* Header */}
+      <header className="border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
+              <span className="text-white font-bold text-sm">T</span>
+            </div>
+            <span className="text-lg font-semibold text-white tracking-tight">Throttl</span>
+          </div>
+          <nav className="hidden md:flex gap-6 text-sm text-gray-400">
+            <a href="#problem" className="hover:text-white transition-colors">Problem</a>
+            <a href="#architecture" className="hover:text-white transition-colors">Architecture</a>
+            <a href="#adoption" className="hover:text-white transition-colors">Adoption</a>
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="max-w-7xl mx-auto px-6 py-24">
+        <h1 className="text-4xl md:text-5xl font-bold leading-tight max-w-4xl">
+          Distributed Rate Limiting Platform <br />
+          <span className="text-blue-500">Built for Production Systems</span>
+        </h1>
+
+        <p className="mt-6 text-gray-400 text-lg max-w-3xl">
+          Throttl is a self-hosted, cloud-native rate limiting platform that
+          solves the core challenges of enforcing fair usage and protecting
+          services in distributed systems — with sub-10ms decisions,
+          multi-tenancy, and full observability.
+        </p>
+
+        <div className="mt-10 flex gap-4">
+          <Link
+            href="/dashboard"
+            className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2 transition-colors"
+          >
+            View Dashboard
+            <ArrowRightIcon className="h-5 w-5" />
+          </Link>
+          <a
+            href="#architecture"
+            className="border border-gray-700 px-6 py-3 rounded-lg text-gray-300 hover:border-gray-500 transition-colors"
+          >
+            Architecture
+          </a>
+        </div>
+      </section>
+
+      {/* Problem */}
+      <section id="problem" className="border-t border-gray-800 bg-gray-950">
+        <div className="max-w-7xl mx-auto px-6 py-20">
+          <h2 className="text-2xl font-semibold mb-6">
+            Why Rate Limiting Is Hard
+          </h2>
+
+          <p className="text-gray-400 max-w-3xl mb-10">
+            In distributed systems, rate limiting must balance speed,
+            consistency, and correctness. Traditional approaches either fail
+            under scale or introduce unacceptable latency.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6 text-sm">
+            <Problem title="State Synchronization">
+              Multiple instances need shared counters without race conditions.
+            </Problem>
+            <Problem title="Latency Constraints">
+              Decisions must happen in under 10ms to avoid slowing APIs.
+            </Problem>
+            <Problem title="Dynamic Configuration">
+              Limits must change without redeploying services.
+            </Problem>
+            <Problem title="Multi-Tenancy">
+              Each client needs isolated limits and secure access.
+            </Problem>
+          </div>
+        </div>
+      </section>
+
+      {/* Architecture */}
+      <section id="architecture" className="border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-20">
+          <h2 className="text-2xl font-semibold mb-6">
+            System Architecture
+          </h2>
+
+          <p className="text-gray-400 max-w-3xl mb-12">
+            Throttl is designed as an independent enforcement service that sits
+            in front of APIs or internal services, making fast, atomic rate
+            limiting decisions.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6 text-sm">
+            <ArchCard
+              icon={ServerIcon}
+              title="Rate Limiting Engine"
+              desc="Go-based service exposing a /check endpoint with sub-10ms latency."
+            />
+            <ArchCard
+              icon={CloudIcon}
+              title="Redis (State)"
+              desc="Atomic counters implemented using Redis Lua scripts."
+            />
+            <ArchCard
+              icon={Cog6ToothIcon}
+              title="PostgreSQL (Config)"
+              desc="ACID-backed storage for rules, API keys, and audit logs."
+            />
+          </div>
+
+          <div className="mt-10 grid md:grid-cols-2 gap-6 text-sm">
+            <ArchCard
+              icon={BoltIcon}
+              title="Token Bucket Algorithm"
+              desc="Allows controlled bursts while maintaining average rate limits."
+            />
+            <ArchCard
+              icon={ChartBarIcon}
+              title="Sliding Window Algorithm"
+              desc="Precise time-based limiting using Redis sorted sets."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Platform Features */}
+      <section className="border-t border-gray-800 bg-gray-950">
+        <div className="max-w-7xl mx-auto px-6 py-20">
+          <h2 className="text-2xl font-semibold mb-12">
+            Platform Capabilities
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8 text-sm">
+            <Feature icon={KeyIcon} title="API Key Security">
+              SHA-256 hashed keys with rotation, revocation, and audit trails.
+            </Feature>
+            <Feature icon={UsersIcon} title="Multi-Tenant Isolation">
+              Strict separation of clients, rules, and usage metrics.
+            </Feature>
+            <Feature icon={ShieldCheckIcon} title="Production Observability">
+              Built-in metrics and health endpoints for monitoring.
+            </Feature>
+            <Feature icon={LockClosedIcon} title="RBAC & Admin APIs">
+              Secure CRUD operations for keys, rules, and clients.
+            </Feature>
+            <Feature icon={CloudIcon} title="Cloud-Native Deployment">
+              Docker Compose for local dev, ready for production scaling.
+            </Feature>
+            <Feature icon={BoltIcon} title="High Throughput">
+              50k+ requests/sec per instance with predictable latency.
+            </Feature>
+          </div>
+        </div>
+      </section>
+
+      {/* Adoption */}
+      <section id="adoption" className="border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-20">
+          <h2 className="text-2xl font-semibold mb-6">
+            How Companies Use Throttl
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-6 text-sm">
+            <UseCase
+              title="Public API Protection"
+              desc="Enforce quotas for free, paid, and enterprise customers."
+            />
+            <UseCase
+              title="Microservices Safety"
+              desc="Prevent cascading failures by throttling internal calls."
+            />
+            <UseCase
+              title="Resource Control"
+              desc="Limit expensive operations like uploads or emails."
+            />
+          </div>
+
+          <div className="mt-10 text-gray-400 max-w-3xl">
+            Throttl runs as a standalone service. Teams integrate it via HTTP or
+            middleware without modifying existing business logic — making it
+            truly plug-and-play.
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-800 bg-black">
+        <div className="max-w-7xl mx-auto px-6 py-8 text-sm text-gray-500 flex justify-between">
+          <span>© 2025 Throttl</span>
+          <span>Engineered for distributed systems</span>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
-export default function Dashboard() {
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [loading, setLoading] = useState(true);
+/* ---------- Components ---------- */
 
-    useEffect(() => {
-        // Simulate API call - in real implementation, fetch from Throttl API
-        const fetchStats = async () => {
-            try {
-                // Mock data for demonstration
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                setStats({
-                    totalRequests: 125430,
-                    allowedRequests: 118920,
-                    blockedRequests: 6510,
-                    activeClients: 24,
-                    activeKeys: 47,
-                    avgLatency: 8.5,
-                });
-            } catch (error) {
-                console.error('Failed to fetch stats:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+function Problem({ title, children }: any) {
+  return (
+    <div className="border border-gray-800 rounded-xl p-6 bg-black">
+      <h4 className="font-medium mb-2">{title}</h4>
+      <p className="text-gray-400">{children}</p>
+    </div>
+  );
+}
 
-        fetchStats();
-    }, []);
+function ArchCard({ icon: Icon, title, desc }: any) {
+  return (
+    <div className="border border-gray-800 rounded-xl p-6 bg-black">
+      <Icon className="h-6 w-6 text-blue-500 mb-4" />
+      <h4 className="font-medium mb-2">{title}</h4>
+      <p className="text-gray-400">{desc}</p>
+    </div>
+  );
+}
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
+function Feature({ icon: Icon, title, children }: any) {
+  return (
+    <div className="border border-gray-800 rounded-xl p-6 bg-black">
+      <Icon className="h-6 w-6 text-blue-500 mb-4" />
+      <h4 className="font-medium mb-2">{title}</h4>
+      <p className="text-gray-400">{children}</p>
+    </div>
+  );
+}
 
-    const successRate = stats ? ((stats.allowedRequests / stats.totalRequests) * 100).toFixed(1) : '0';
-
-    return (
-        <div className="min-h-screen bg-black text-gray-100">
-            {/* Header */}
-            <header className="bg-gray-900 border-b border-gray-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-6">
-                        <div className="flex items-center">
-                            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg mr-3">
-                                <span className="text-white font-bold text-lg">T</span>
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold text-white">Throttl</h1>
-                                <span className="text-xs text-gray-400">Rate Limiting Platform</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-6">
-                            <Link href="/landing" className="text-gray-400 hover:text-blue-500 transition-colors text-sm">
-                                Landing
-                            </Link>
-                            <Link href="/monitoring" className="text-gray-400 hover:text-blue-500 transition-colors">
-                                <ChartBarIcon className="h-5 w-5" />
-                            </Link>
-                            <div className="h-4 w-px bg-gray-700"></div>
-                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">Production</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* System Status */}
-                <SystemStatus />
-
-                {/* Metrics Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    <MetricsCard
-                        title="Total Requests"
-                        value={stats?.totalRequests.toLocaleString() || '0'}
-                        icon={ChartBarIcon}
-                        trend="+12.5%"
-                        trendUp={true}
-                    />
-                    <MetricsCard
-                        title="Success Rate"
-                        value={`${successRate}%`}
-                        icon={ShieldCheckIcon}
-                        trend="+2.1%"
-                        trendUp={true}
-                    />
-                    <MetricsCard
-                        title="Avg Latency"
-                        value={`${stats?.avgLatency || 0}ms`}
-                        icon={ClockIcon}
-                        trend="-1.2ms"
-                        trendUp={true}
-                    />
-                    <MetricsCard
-                        title="Active Clients"
-                        value={stats?.activeClients.toString() || '0'}
-                        icon={UsersIcon}
-                        trend="+3"
-                        trendUp={true}
-                    />
-                    <MetricsCard
-                        title="API Keys"
-                        value={stats?.activeKeys.toString() || '0'}
-                        icon={KeyIcon}
-                        trend="+5"
-                        trendUp={true}
-                    />
-                    <MetricsCard
-                        title="Blocked Requests"
-                        value={stats?.blockedRequests.toLocaleString() || '0'}
-                        icon={ShieldCheckIcon}
-                        trend="+8.3%"
-                        trendUp={false}
-                    />
-                </div>
-
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="text-lg font-medium text-white">Quick Actions</h3>
-                        </div>
-                        <div className="card-body">
-                            <div className="grid grid-cols-2 gap-4">
-                                <Link href="/api-keys" className="btn-primary text-center hover-lift">
-                                    <KeyIcon className="h-4 w-4 mr-2" />
-                                    API Keys
-                                </Link>
-                                <Link href="/rate-limits" className="btn-secondary text-center hover-lift">
-                                    <CogIcon className="h-4 w-4 mr-2" />
-                                    Rate Limits
-                                </Link>
-                                <Link href="/monitoring" className="btn-primary text-center hover-lift">
-                                    <ChartBarIcon className="h-4 w-4 mr-2" />
-                                    Monitoring
-                                </Link>
-                                <Link href="/clients" className="btn-secondary text-center hover-lift">
-                                    <UsersIcon className="h-4 w-4 mr-2" />
-                                    Clients
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-
-                    <RecentActivity />
-                </div>
-
-                {/* External Links */}
-                <div className="card">
-                    <div className="card-header">
-                        <h3 className="text-lg font-medium text-white">Monitoring & Analytics</h3>
-                    </div>
-                    <div className="card-body">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <a
-                                href={process.env.NEXT_PUBLIC_GRAFANA_URL || 'http://localhost:3002'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-750 hover:border-gray-600 transition-all duration-200 hover-lift"
-                            >
-                                <ChartBarIcon className="h-8 w-8 text-orange-400 mr-3" />
-                                <div>
-                                    <h4 className="font-medium text-gray-100">Grafana</h4>
-                                    <p className="text-sm text-gray-400">Real-time dashboards</p>
-                                </div>
-                            </a>
-                            <a
-                                href={process.env.NEXT_PUBLIC_PROMETHEUS_URL || 'http://localhost:9090'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-750 hover:border-gray-600 transition-all duration-200 hover-lift"
-                            >
-                                <ChartBarIcon className="h-8 w-8 text-red-400 mr-3" />
-                                <div>
-                                    <h4 className="font-medium text-gray-100">Prometheus</h4>
-                                    <p className="text-sm text-gray-400">Metrics & alerts</p>
-                                </div>
-                            </a>
-                            <Link
-                                href="/api-docs"
-                                className="flex items-center p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-750 hover:border-gray-600 transition-all duration-200 hover-lift"
-                            >
-                                <CogIcon className="h-8 w-8 text-blue-400 mr-3" />
-                                <div>
-                                    <h4 className="font-medium text-gray-100">API Docs</h4>
-                                    <p className="text-sm text-gray-400">Integration guide</p>
-                                </div>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-    );
+function UseCase({ title, desc }: any) {
+  return (
+    <div className="border border-gray-800 rounded-xl p-6 bg-black">
+      <h4 className="font-medium mb-2">{title}</h4>
+      <p className="text-gray-400">{desc}</p>
+    </div>
+  );
 }

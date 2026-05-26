@@ -94,7 +94,7 @@ func APIKeyAuthWithConfig(store *storage.PostgresStore, config *AuthConfig) func
 			}
 
 			// Determine if this is an admin key
-			isAdmin := strings.HasPrefix(keyData.KeyHash, config.AdminKeyPrefix)
+			isAdmin := keyData.KeyType == "admin"
 
 			// Record successful API key usage
 			metrics.RecordAPIKeyUsage(keyData.ClientID, keyData.KeyType)

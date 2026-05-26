@@ -9,7 +9,6 @@ Throttl uses a distributed architecture with Redis for shared state and PostgreS
 ```
 Client Apps → Load Balancer → Throttl API → Redis (rate data)
                                          → PostgreSQL (config)
-                                         → Prometheus (metrics)
 ```
 
 ## Tech Stack
@@ -17,9 +16,7 @@ Client Apps → Load Balancer → Throttl API → Redis (rate data)
 - **Backend**: Go with Gin framework
 - **Storage**: Redis for rate limiting state, PostgreSQL for configuration
 - **Frontend**: React/Next.js with TypeScript and Tailwind CSS
-- **Monitoring**: Prometheus metrics, Grafana dashboards
-- **Deployment**: Docker Compose, Kubernetes manifests
-- **Cloud**: AWS, GCP, Azure deployment guides
+- **Deployment**: Docker Compose
 
 ## Why This Project Exists
 
@@ -33,13 +30,6 @@ Rate limiting is critical for API protection but becomes complex in distributed 
 
 # Access the dashboard
 open http://localhost
-
-# View monitoring
-open http://localhost:3000  # Grafana (admin/admin)
 ```
 
-## Documentation
 
-- `Documentation.md` - Technical architecture and design decisions
-- `Guide.md` - Setup and deployment instructions
-- `docs/` - Cloud-specific deployment guides

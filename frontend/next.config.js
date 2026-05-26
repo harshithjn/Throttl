@@ -9,8 +9,17 @@ const nextConfig = {
     async rewrites() {
         return [
             {
-                source: '/api/throttl/:path*',
+                source: '/api/:path*',
                 destination: `${process.env.THROTTL_API_URL || 'http://localhost:8080'}/:path*`,
+            },
+        ];
+    },
+    async redirects() {
+        return [
+            {
+                source: '/login',
+                destination: '/dashboard',
+                permanent: true,
             },
         ];
     },

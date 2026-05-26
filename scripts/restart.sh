@@ -27,19 +27,16 @@ docker-compose up -d throttl
 echo "6. Waiting for API..."
 sleep 5
 
-# Start monitoring and frontend
-echo "7. Starting monitoring and frontend..."
-docker-compose up -d prometheus grafana frontend
+# Start frontend and reverse proxy Nginx
+echo "7. Starting frontend and Nginx..."
+docker-compose up -d frontend nginx
 
 echo ""
 echo "✅ Throttl Platform Started!"
 echo ""
 echo "🌐 Services:"
-echo "   Dashboard:    http://localhost:3001"
-echo "   Landing Page: http://localhost:3001/landing"
-echo "   API:          http://localhost:8080"
-echo "   Grafana:      http://localhost:3002 (admin/admin)"
-echo "   Prometheus:   http://localhost:9090"
+echo "   Dashboard & Landing Page: http://localhost (Port 80)"
+echo "   API Base URL:            http://localhost/api"
 echo ""
 echo "📊 Check status: docker-compose ps"
 echo "📋 View logs:    docker-compose logs -f [service]"
